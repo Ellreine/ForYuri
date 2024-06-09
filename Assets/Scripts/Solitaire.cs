@@ -185,55 +185,52 @@ public class Solitaire : MonoBehaviour
     public void DealFromDeck()
     {
         // Если больше нет карт в колоде, не делаем ничего
-        if (deckLocation >= trips)
+        if (deckLocation >= deck.Count)
         {
             return;
         }
 
         // Начальные позиции для смещения
-        float xOffset = 2.3f;
+        float xOffset = 2.5f;
+        float yOffset = 0f;
         float zOffset = -0.3f;
-        float yOffset = -0.0f;
 
-        // Если уже есть карты на столе, находим последнюю карту и смещаем относительно нее
-        if (tripsOnDisplay.Count > 0)
+        // Удалить предыдущие карты из отображения
+        foreach (Transform child in deckButton.transform)
         {
-            GameObject lastCard = GameObject.Find(tripsOnDisplay.Last());
-            if (lastCard != null)
+            if (child.CompareTag("Card"))
             {
-                Vector3 lastCardPosition = lastCard.transform.position;
-                xOffset = lastCardPosition.x - deckButton.transform.position.x + 0.25f;
-               // yOffset = lastCardPosition.y - deckButton.transform.position.y - 0.0f;
-                zOffset = lastCardPosition.z - deckButton.transform.position.z - 0.1f;
+                // Переворачиваем предыдущую карту рубашкой вверх
+                Selectable selectable = child.GetComponent<Selectable>();
+                if (selectable != null)
+                {
+                    selectable.faceUp = false;
+                    child.transform.position = new Vector3(child.transform.position.x, child.transform.position.y, child.transform.position.z + 0.1f); // Смещаем назад по оси Z
+                }
             }
         }
 
-        // Добавляем карты на стол с смещением
-        foreach (string card in deckTrips[deckLocation])
+        // Добавляем одну карту на стол
+        string card = deck[deckLocation];
+        GameObject newTopCard = Instantiate(cardPrefab, new Vector3(deckButton.transform.position.x + xOffset, deckButton.transform.position.y + yOffset, deckButton.transform.position.z + zOffset), Quaternion.identity, deckButton.transform);
+        newTopCard.name = card;
+        newTopCard.tag = "Card"; // Убедитесь, что тег установлен
+        newTopCard.layer = LayerMask.NameToLayer("Default"); // Убедитесь, что слой установлен
+
+        // Убедитесь, что компонент Selectable настроен правильно
+        Selectable selectableNew = newTopCard.GetComponent<Selectable>();
+        if (selectableNew != null)
         {
-            GameObject newTopCard = Instantiate(cardPrefab, new Vector3(deckButton.transform.position.x + xOffset, deckButton.transform.position.y + yOffset, deckButton.transform.position.z + zOffset), Quaternion.identity, deckButton.transform);
-            newTopCard.name = card;
-            newTopCard.tag = "Card"; // Убедитесь, что тег установлен
-            newTopCard.layer = LayerMask.NameToLayer("Default"); // Убедитесь, что слой установлен
-
-            // Убедитесь, что компонент Selectable настроен правильно
-            Selectable selectable = newTopCard.GetComponent<Selectable>();
-            if (selectable != null)
-            {
-                selectable.faceUp = true;
-                selectable.inDeckPile = true;
-            }
-
-            xOffset += 0.25f;
-            
-            zOffset -= 0.1f;
-            tripsOnDisplay.Add(card);
+            selectableNew.faceUp = true;
+            selectableNew.inDeckPile = true;
         }
+
+        tripsOnDisplay.Add(card);
         deckLocation++;
     }
 
 
-    void RestackTopDeck()
+    public void RestackTopDeck()
     {
         foreach (string card in discardPile)
         {
@@ -241,5 +238,6 @@ public class Solitaire : MonoBehaviour
         }
         discardPile.Clear();
         SortDeckIntoTrips();
+        deckLocation = 0; // Сбрасываем deckLocation, чтобы начать снова
     }
 }

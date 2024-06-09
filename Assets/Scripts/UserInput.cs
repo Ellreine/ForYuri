@@ -67,11 +67,12 @@ public class UserInput : MonoBehaviour
                 else if (hit.collider.CompareTag("Bottom"))
                 {
                     // clicked bottom
-                    Bottom();
+                    Bottom(hit.collider.gameObject);
                 }
             }
         }
     }
+
 
     void Deck()
     {
@@ -141,10 +142,17 @@ public class UserInput : MonoBehaviour
         }
     }
 
-    void Bottom()
+    void Bottom(GameObject selected)
     {
         // bottom click
         print("Clicked on bottom");
+        if (slot1.CompareTag("Card"))
+        {
+            if (slot1.GetComponent<Selectable>().value == 13)
+            {
+                Stack(selected);
+            }
+        }
     }
 
     bool Stackable(GameObject selected)
