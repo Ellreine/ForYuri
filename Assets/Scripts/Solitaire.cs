@@ -54,7 +54,9 @@ public class Solitaire : MonoBehaviour
         discardPile.Clear();
         tripsOnDisplay.Clear();
         deckTrips.Clear();
-        deckLocation = 0;
+        deckLocation = 0; // Сбрасываем deckLocation
+        trips = 0;
+        tripsRemainder = 0;
 
         // Генерация и перемешивание новой колоды
         deck = GenerateDeck();
@@ -87,9 +89,9 @@ public class Solitaire : MonoBehaviour
         {
             int k = random.Next(n);
             n--;
-            T temp = list[k];
-            list[k] = list[n];
-            list[n] = temp;
+            T temp = list[n];
+            list[n] = list[k];
+            list[k] = temp;
         }
     }
 
@@ -110,6 +112,8 @@ public class Solitaire : MonoBehaviour
                     Quaternion.identity, bottomPos[i].transform);
 
                 newCard.name = card;
+                newCard.tag = "Card";
+                newCard.layer = LayerMask.NameToLayer("Default");
                 newCard.GetComponent<Selectable>().row = i;
                 newCard.transform.localScale = new Vector3(1.0f, 1.0f, 1.0f); // Установим масштаб карты
 
@@ -180,43 +184,54 @@ public class Solitaire : MonoBehaviour
 
     public void DealFromDeck()
     {
-        foreach (Transform child in deckButton.transform)
+        // Если больше нет карт в колоде, не делаем ничего
+        if (deckLocation >= trips)
         {
-            if (child.CompareTag("Card"))
+            return;
+        }
+
+        // Начальные позиции для смещения
+        float xOffset = 2.3f;
+        float zOffset = -0.3f;
+        float yOffset = -0.0f;
+
+        // Если уже есть карты на столе, находим последнюю карту и смещаем относительно нее
+        if (tripsOnDisplay.Count > 0)
+        {
+            GameObject lastCard = GameObject.Find(tripsOnDisplay.Last());
+            if (lastCard != null)
             {
-                if (child != null)
-                {
-                    deck.Remove(child.name);
-                    discardPile.Add(child.name);
-                    Destroy(child.gameObject);
-                }
+                Vector3 lastCardPosition = lastCard.transform.position;
+                xOffset = lastCardPosition.x - deckButton.transform.position.x + 0.25f;
+               // yOffset = lastCardPosition.y - deckButton.transform.position.y - 0.0f;
+                zOffset = lastCardPosition.z - deckButton.transform.position.z - 0.1f;
             }
         }
 
-        if (deckLocation < trips)
+        // Добавляем карты на стол с смещением
+        foreach (string card in deckTrips[deckLocation])
         {
-            // draw 3 new cards
-            tripsOnDisplay.Clear();
-            float xOffset = 2.5f;
-            float zOffset = -0.2f;
+            GameObject newTopCard = Instantiate(cardPrefab, new Vector3(deckButton.transform.position.x + xOffset, deckButton.transform.position.y + yOffset, deckButton.transform.position.z + zOffset), Quaternion.identity, deckButton.transform);
+            newTopCard.name = card;
+            newTopCard.tag = "Card"; // Убедитесь, что тег установлен
+            newTopCard.layer = LayerMask.NameToLayer("Default"); // Убедитесь, что слой установлен
 
-            foreach (string card in deckTrips[deckLocation])
+            // Убедитесь, что компонент Selectable настроен правильно
+            Selectable selectable = newTopCard.GetComponent<Selectable>();
+            if (selectable != null)
             {
-                GameObject newTopCard = Instantiate(cardPrefab, new Vector3(deckButton.transform.position.x + xOffset, deckButton.transform.position.y, deckButton.transform.position.z + zOffset), Quaternion.identity, deckButton.transform);
-                xOffset += 0.5f;
-                zOffset -= 0.2f;
-                newTopCard.name = card;
-                tripsOnDisplay.Add(card);
-                newTopCard.GetComponent<Selectable>().faceUp = true;
-                newTopCard.GetComponent<Selectable>().inDeckPile = true;
+                selectable.faceUp = true;
+                selectable.inDeckPile = true;
             }
-            deckLocation++;
+
+            xOffset += 0.25f;
+            
+            zOffset -= 0.1f;
+            tripsOnDisplay.Add(card);
         }
-        else
-        {
-            RestackTopDeck();
-        }
+        deckLocation++;
     }
+
 
     void RestackTopDeck()
     {

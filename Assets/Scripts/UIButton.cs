@@ -22,6 +22,7 @@ public class UIButton : MonoBehaviour
         highScorePanel.SetActive(false);
         ResetScene();
     }
+
     public void ResetScene()
     {
         // ”ничтожить все объекты карт

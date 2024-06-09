@@ -11,6 +11,7 @@ public class UserInput : MonoBehaviour
     private float timer;
     private float doubleClickTime = 0.3f;
     private int clickCount = 0;
+
     void Start()
     {
         solitaire = FindObjectOfType<Solitaire>();
@@ -43,7 +44,7 @@ public class UserInput : MonoBehaviour
             clickCount++;
 
             Vector3 mousePosition = Camera.main.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, -10));
-            RaycastHit2D hit = Physics2D.Raycast(Camera.main.ScreenToWorldPoint(Input.mousePosition), Vector2.zero);
+            RaycastHit2D hit = Physics2D.Raycast(Camera.main.ScreenToWorldPoint(Input.mousePosition), Vector2.zero, Mathf.Infinity, LayerMask.GetMask("Default"));
 
             if (hit)
             {
@@ -72,16 +73,16 @@ public class UserInput : MonoBehaviour
         }
     }
 
-
     void Deck()
     {
-        //deck click
+        // deck click
         print("Clicked on deck");
         solitaire.DealFromDeck();
     }
+
     void Card(GameObject selected)
     {
-        //card click
+        // card click
         print("Clicked on card");
 
         if (!selected.GetComponent<Selectable>().faceUp)
@@ -126,9 +127,10 @@ public class UserInput : MonoBehaviour
             }
         }
     }
+
     void Top(GameObject selected)
     {
-        //top click
+        // top click
         print("Clicked on top");
         if (slot1.CompareTag("Card"))
         {
@@ -138,9 +140,10 @@ public class UserInput : MonoBehaviour
             }
         }
     }
+
     void Bottom()
     {
-        //bottom click
+        // bottom click
         print("Clicked on bottom");
     }
 
@@ -188,12 +191,11 @@ public class UserInput : MonoBehaviour
                     }
                     else
                     {
-                        print("Stackeble");
+                        print("Stackable");
                         return true;
                     }
                 }
             }
-            //return false;
         }
         return false;
     }
@@ -229,17 +231,17 @@ public class UserInput : MonoBehaviour
         {
             solitaire.bottoms[s1.row].Remove(slot1.name);
 
-            // открыть prev карту, если она есть и закрыт
+            // открыть prev карту, если она есть и закрыта
             if (solitaire.bottoms[s1.row].Count > 0)
             {
                 string previousCardName = solitaire.bottoms[s1.row].Last();
                 GameObject previousCard = GameObject.Find(previousCardName);
                 if (previousCard != null)
                 {
-                    Selectable previousCardSelectabe = previousCard.GetComponent<Selectable>();
-                    if (previousCardSelectabe != null && !previousCardSelectabe.faceUp)
+                    Selectable previousCardSelectable = previousCard.GetComponent<Selectable>();
+                    if (previousCardSelectable != null && !previousCardSelectable.faceUp)
                     {
-                        previousCardSelectabe.faceUp = true;
+                        previousCardSelectable.faceUp = true;
                     }
                 }
             }
@@ -262,25 +264,27 @@ public class UserInput : MonoBehaviour
         slot1 = this.gameObject;
     }
 
-
     bool Blocked(GameObject selected)
     {
         Selectable s2 = selected.GetComponent<Selectable>();
         if (s2.inDeckPile == true)
         {
-            if (s2.name == solitaire.tripsOnDisplay.Last())
+            if (solitaire.tripsOnDisplay.Any() && s2.name == solitaire.tripsOnDisplay.Last())
             {
                 return false;
             }
             else
             {
-                print(s2.name + "Is vlocked by" + solitaire.tripsOnDisplay.Last());
+                if (solitaire.tripsOnDisplay.Any())
+                {
+                    print(s2.name + " is blocked by " + solitaire.tripsOnDisplay.Last());
+                }
                 return true;
             }
         }
         else
         {
-            if (s2.name == solitaire.bottoms[s2.row].Last())
+            if (solitaire.bottoms[s2.row].Any() && s2.name == solitaire.bottoms[s2.row].Last())
             {
                 return false;
             }
@@ -355,14 +359,7 @@ public class UserInput : MonoBehaviour
                     {
                         i++;
                     }
-                    if (i == 0)
-                    {
-                        return true;
-                    }
-                    else
-                    {
-                        return false;
-                    }
+                    return i == 0;
                 }
             }
         }
