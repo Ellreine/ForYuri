@@ -58,12 +58,13 @@ public class Board : MonoBehaviour
     private void Start()
     {
         LoadData();
-        NewGame();
+        LoadGame();
 
         // Привязываем методы к кнопкам меню
         newGameButton.onClick.AddListener(NewGame);
         continueGameButton.onClick.AddListener(ContinueGame);
         exitButton.onClick.AddListener(ExitGame);
+        tryAgainButton.onClick.AddListener(TryAgain); // Привязываем метод TryAgain к кнопке Try Again
     }
 
     public void NewGame()
@@ -75,6 +76,7 @@ public class Board : MonoBehaviour
         canvasMenu.SetActive(false); // Скрываем меню при начале новой игры
         mainCanvas.SetActive(true); // Включаем основной Canvas при начале новой игры
         enabled = true;
+        SaveGame(); // Сохраняем игру после начала новой игры
     }
 
     public void NewWord()
@@ -85,10 +87,21 @@ public class Board : MonoBehaviour
         canvasMenu.SetActive(false); // Скрываем меню при начале новой игры
         mainCanvas.SetActive(true); // Включаем основной Canvas при начале новой игры
         enabled = true;
+        SaveGame(); // Сохраняем игру после начала новой игры
+    }
+
+    public void TryAgain()
+    {
+        ClearBoard();
+        // Оставляем текущее слово для возможности его отгадать снова
+        canvasMenu.SetActive(false); // Скрываем меню при начале новой попытки
+        mainCanvas.SetActive(true); // Включаем основной Canvas при начале новой попытки
+        enabled = true;
     }
 
     public void ContinueGame()
     {
+        LoadGame(); // Загружаем игру при продолжении
         canvasMenu.SetActive(false); // Скрываем меню при продолжении игры
         mainCanvas.SetActive(true); // Включаем основной Canvas при продолжении игры
         enabled = true;
@@ -96,6 +109,7 @@ public class Board : MonoBehaviour
 
     public void ExitGame()
     {
+        SaveGame(); // Сохраняем игру перед выходом
         Application.Quit(); // Выход из игры
     }
 
@@ -234,7 +248,9 @@ public class Board : MonoBehaviour
             wordCount++;
             UpdateWordCountText();
             newWordButton.gameObject.SetActive(true);
+            tryAgainButton.gameObject.SetActive(false);
             enabled = false;
+            SaveGame(); // Сохраняем игру после победы
         }
         else
         {
@@ -243,9 +259,16 @@ public class Board : MonoBehaviour
 
             if (rowIndex >= rows.Length)
             {
+                // Все попытки исчерпаны и слово не угадано
                 tryAgainButton.gameObject.SetActive(true);
-                newWordButton.gameObject.SetActive(true);
+                newWordButton.gameObject.SetActive(false);
                 enabled = false;
+            }
+            else
+            {
+                // Продолжаем игру
+                tryAgainButton.gameObject.SetActive(false);
+                newWordButton.gameObject.SetActive(false);
             }
         }
     }
@@ -321,9 +344,83 @@ public class Board : MonoBehaviour
 
     private void OnDisable()
     {
-        if (rowIndex > 0 && rowIndex <= rows.Length && !HasWon(rows[rowIndex - 1]))
+        // Убираем любую логику, которая может мешать отображению кнопок
+    }
+
+    public void SaveGame()
+    {
+        GameState gameState = new GameState
         {
-            tryAgainButton.gameObject.SetActive(true);
+            word = word,
+            rowIndex = rowIndex,
+            columnIndex = columnIndex,
+            wordCount = wordCount,
+            rows = new List<RowState>()
+        };
+
+        foreach (Row row in rows)
+        {
+            RowState rowState = new RowState
+            {
+                tiles = new List<TileState>()
+            };
+            foreach (Tile tile in row.tiles)
+            {
+                TileState tileState = new TileState
+                {
+                    letter = tile.letter,
+                    state = tile.state
+                };
+                rowState.tiles.Add(tileState);
+            }
+            gameState.rows.Add(rowState);
+        }
+
+        string json = JsonUtility.ToJson(gameState);
+        File.WriteAllText(Application.persistentDataPath + "/savefile.json", json);
+    }
+
+    public void LoadGame()
+    {
+        string path = Application.persistentDataPath + "/savefile.json";
+        if (File.Exists(path))
+        {
+            string json = File.ReadAllText(path);
+            GameState gameState = JsonUtility.FromJson<GameState>(json);
+
+            wordCount = gameState.wordCount;
+            UpdateWordCountText();
+
+            NewWord(); // Начинаем с нового слова
+
+            SaveGame(); // Сохраняем игру после загрузки
+        }
+        else
+        {
+            NewGame();
         }
     }
+}
+
+[System.Serializable]
+public class GameState
+{
+    public string word;
+    public int rowIndex;
+    public int columnIndex;
+    public List<RowState> rows;
+    public int wordCount;
+}
+
+[System.Serializable]
+public class RowState
+{
+    public List<TileState> tiles;
+}
+
+[System.Serializable]
+public class TileState
+{
+    public char letter;
+    public Tile.State state;
 }

@@ -2670,6 +2670,11 @@ MonoBehaviour:
   wordCountText: {fileID: 1802158625}
   newWordButton: {fileID: 1970586075}
   tryAgainButton: {fileID: 456713921}
+  canvasMenu: {fileID: 866229894}
+  mainCanvas: {fileID: 1775177986}
+  newGameButton: {fileID: 70444901}
+  continueGameButton: {fileID: 1537649535}
+  exitButton: {fileID: 1810013199}
 --- !u!1 &1970586073
 GameObject:
   m_ObjectHideFlags: 0
@@ -2756,7 +2761,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 1959346409}
         m_TargetAssemblyTypeName: Board, Assembly-CSharp
-        m_MethodName: NewGame
+        m_MethodName: NewWord
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
